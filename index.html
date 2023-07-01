@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser-matter-collision-plugin"></script>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="editor"></div>
+    <div id="sidebar">
+      <h2>Tiles</h2>
+      <div id="terrainTile" class="tile">Terreno</div>
+      <div id="collisionTile" class="tile">Colisor</div>
+      <div id="deleteTile" class="tile">Apagar</div>
+      <div id="objectTiles">
+        <h3>Objects</h3>
+        <div class="tile" data-tile="chairs/game-chair-2.png">Cadeira</div>
+        <div class="tile" data-tile="computers/desktop-0.png">Computador</div>
+        <div class="tile" data-tile="desks/cyberpunk-desk-0.png">Mesa</div>
+        <div class="tile" data-tile="rugs/fancy-rug.png">Tapete</div>
+      </div>
+    </div>
+    <script type="module" src="js/Game.js"></script>
+  </body>
+</html>
