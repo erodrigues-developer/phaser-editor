@@ -46,6 +46,10 @@ export default class Editor extends Phaser.Scene {
 
     this.objectsGroup = this.add.group();
 
+    // Criação do objeto 'fantasma'
+    this.ghostObject = this.add.sprite(0, 0, null);
+    this.ghostObject.visible = false;
+
     // Fills the map with the terrain tile and the border with collision tiles
     this.terrainLayer.fill(0, 0, 0, this.map.width, this.map.height);
     this.terrainLayer.setCollision(1, true);
@@ -135,6 +139,9 @@ export default class Editor extends Phaser.Scene {
           let objectY = pointer.worldY - objectHeight / 2;
           let object = this.objectsGroup.create(objectX, objectY, objectId);
           object.setOrigin(0, 0);
+
+          this.ghostObject.visible = false;
+
           console.log({ objectWidth, objectHeight });
         } else if (this.selectedTile === "collision") {
           this.collisionEditorLayer.putTileAt(
@@ -156,35 +163,29 @@ export default class Editor extends Phaser.Scene {
     this.input.on(
       "pointermove",
       function (pointer) {
+        let worldPoint = pointer.positionToCamera(this.cameras.main);
+
+        this.ghostObject.x = worldPoint.x;
+        this.ghostObject.y = worldPoint.y;
+
+        if (this.selectedTile && this.selectedTile.startsWith("object-")) {
+          this.ghostObject.setTexture(this.selectedTile);
+          this.ghostObject.visible = true;
+          this.children.bringToTop(this.ghostObject);
+        } else {
+          this.ghostObject.visible = false;
+        }
+
         if (!pointer.isDown) {
           return;
         }
 
-        let worldPoint = pointer.positionToCamera(this.cameras.main);
         let pointerTileXY = this.map.worldToTileXY(worldPoint.x, worldPoint.y);
-        let tile = this.map.getTileAt(pointerTileXY.x, pointerTileXY.y);
 
         if (this.selectedTile === "delete") {
-          if (tile) {
-            this.map.removeTileAt(pointerTileXY.x, pointerTileXY.y);
-          }
-
-          let object = this.objectsGroup.getAt(
-            pointerTileXY.x,
-            pointerTileXY.y
-          );
-          if (object) {
-            this.objectsGroup.remove(object, true, true);
-          }
+          this.map.removeTileAt(pointerTileXY.x, pointerTileXY.y);
         } else if (this.selectedTile.startsWith("object-")) {
-          let objectId = this.selectedTile;
-          let objectWidth = objectDimensions[objectId].width;
-          let objectHeight = objectDimensions[objectId].height;
-          let objectX = pointer.worldX - objectWidth / 2;
-          let objectY = pointer.worldY - objectHeight / 2;
-          let object = this.objectsGroup.create(objectX, objectY, objectId);
-          object.setOrigin(0, 0);
-          console.log({ objectWidth, objectHeight });
+          // do nothing
         } else if (this.selectedTile === "collision") {
           this.collisionEditorLayer.putTileAt(
             0,
