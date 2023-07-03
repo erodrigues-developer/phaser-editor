@@ -93,6 +93,7 @@ export default class Editor extends Phaser.Scene {
     const collisionTile = document.getElementById("collisionTile");
     const deleteTile = document.getElementById("deleteTile");
     const objectTiles = document.querySelectorAll("#objectTiles .tile");
+    const saveMapButton = document.getElementById("saveMapButton");
 
     terrainTile.addEventListener("click", () => {
       this.selectedTile = "terrain";
@@ -106,11 +107,17 @@ export default class Editor extends Phaser.Scene {
       this.selectedTile = "delete";
     });
 
+    saveMapButton.addEventListener("click", () => {
+      this.saveMap();
+    });
+
     objectTiles.forEach((tile) => {
       tile.addEventListener("click", () => {
         this.selectedTile = "object-" + tile.dataset.tile;
       });
     });
+
+    this.objectUnderPointer = null;
 
     this.input.on(
       "pointerdown",
@@ -120,16 +127,11 @@ export default class Editor extends Phaser.Scene {
         let tile = this.map.getTileAt(pointerTileXY.x, pointerTileXY.y);
 
         if (this.selectedTile === "delete") {
-          if (tile) {
+          if (this.objectUnderPointer) {
+            this.objectsGroup.remove(this.objectUnderPointer, true, true);
+            this.objectUnderPointer = null;
+          } else if (tile) {
             this.map.removeTileAt(pointerTileXY.x, pointerTileXY.y);
-          }
-
-          let object = this.objectsGroup.getAt(
-            pointerTileXY.x,
-            pointerTileXY.y
-          );
-          if (object) {
-            this.objectsGroup.remove(object, true, true);
           }
         } else if (this.selectedTile.startsWith("object-")) {
           let objectId = this.selectedTile;
@@ -141,8 +143,6 @@ export default class Editor extends Phaser.Scene {
           object.setOrigin(0, 0);
 
           this.ghostObject.visible = false;
-
-          console.log({ objectWidth, objectHeight });
         } else if (this.selectedTile === "collision") {
           this.collisionEditorLayer.putTileAt(
             0,
@@ -174,6 +174,16 @@ export default class Editor extends Phaser.Scene {
           this.children.bringToTop(this.ghostObject);
         } else {
           this.ghostObject.visible = false;
+        }
+
+        // Track object under pointer
+        this.objectUnderPointer = null;
+        let objects = this.objectsGroup.getChildren();
+        for (let i = 0; i < objects.length; i++) {
+          if (objects[i].getBounds().contains(pointer.x, pointer.y)) {
+            this.objectUnderPointer = objects[i];
+            break;
+          }
         }
 
         if (!pointer.isDown) {
@@ -238,13 +248,32 @@ export default class Editor extends Phaser.Scene {
   }
 
   saveMap() {
+    let terrainTiles = this.terrainLayer
+      .getTilesWithin(0, 0, this.map.width, this.map.height)
+      .map((tile) => {
+        return {
+          index: tile.index,
+          x: tile.x,
+          y: tile.y,
+        };
+      });
+    let collisionTiles = this.collisionLayer
+      .getTilesWithin(0, 0, this.map.width, this.map.height)
+      .map((tile) => {
+        return {
+          index: tile.index,
+          x: tile.x,
+          y: tile.y,
+        };
+      });
+
     let mapData = {
       width: this.map.width,
       height: this.map.height,
       tileWidth: this.map.tileWidth,
       tileHeight: this.map.tileHeight,
-      terrain: this.terrainLayer.getTileDataArray(),
-      collision: this.collisionLayer.getTileDataArray(),
+      terrain: terrainTiles,
+      collision: collisionTiles,
       objects: [],
     };
 
@@ -263,6 +292,6 @@ export default class Editor extends Phaser.Scene {
     }
 
     let mapDataString = JSON.stringify(mapData);
-    fs.writeFileSync("userMap.json", mapDataString);
+    console.log(mapDataString);
   }
 }
